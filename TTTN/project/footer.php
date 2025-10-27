@@ -1,49 +1,75 @@
-<section class="footer">
-
-    <div class="box-container">
-        <div class="box">
-            <h3>Trung Tâm Hỗ Trợ</h3>
-            <a href="#">Hotline: 1800 1972</a>
-            <a href="#">Khiếu Nại: 1800 1977</a>
-            <a href="#">Bảo Hành: 1900 2024</a>
-
-           
+<footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center space-x-4 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-laptop text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold">NEXGEN LAPTOP</h3>
+                    </div>
+                    <p class="text-gray-400 mb-6 max-w-md">
+                        Chuyên cung cấp laptop chính hãng cao cấp với chất lượng tốt nhất và dịch vụ hỗ trợ tận tâm.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="text-lg font-semibold mb-6">Liên Kết Nhanh</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Trang chủ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Sản phẩm</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Về chúng tôi</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Liên hệ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Hỗ trợ</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Contact Info -->
+                <div>
+                    <h4 class="text-lg font-semibold mb-6">Thông Tin Liên Hệ</h4>
+                    <ul class="space-y-3">
+                        <li class="flex items-center space-x-3">
+                            <i class="fas fa-map-marker-alt text-blue-400"></i>
+                            <span class="text-gray-400">123 Nguyễn Văn Cừ, Q.1, TP.HCM</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <i class="fas fa-phone text-blue-400"></i>
+                            <span class="text-gray-400">1900-1234</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <i class="fas fa-envelope text-blue-400"></i>
+                            <span class="text-gray-400">support@nexgenlaptop.com</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <i class="fas fa-clock text-blue-400"></i>
+                            <span class="text-gray-400">8:00 - 22:00 (Hàng ngày)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center">
+                <p class="text-gray-400">
+                    © 2024 NEXGEN LAPTOP. All rights reserved. | 
+                    <a href="#" class="hover:text-white transition-colors">Chính sách bảo mật</a> | 
+                    <a href="#" class="hover:text-white transition-colors">Điều khoản sử dụng</a>
+                </p>
+            </div>
         </div>
-
-        <div class="box">
-            <h3>MeNu</h3>
-            <a href="home.php">Trang Chủ</a>
-            <a href="about.php">Giới Thiệu</a>
-            <a href="shop.php">Shop</a>
-            <a href="contact.php">Liên Hệ</a>
-        </div>
-
-        <div class="box">
-            <h3>Tiện Ích</h3>
-            <a href="login.php">Đăng Nhập</a>
-            <a href="register.php">Đăng Ký</a>
-            <a href="cart.php">Giỏ Hàng</a>
-            <a href="orders.php">Đặt Hàng</a>
-        </div>
-
-        <div class="box">
-            <h3>Thông Tin Liên Hệ</h3>
-            <p> <i class="fas fa-phone"></i> 0357687476</p>
-            <p> <i class="fas fa-phone"></i> 0911809129 </p>
-            <p> <i class="fas fa-envelope"></i> 2251120108@ut.edu.vn </p>
-            <p> <i class="fas fa-envelope"></i> phamnguyen@gmail.com </p>
-        </div>
-
-        <div class="box">
-            <h3>Địa Chỉ Liên Hệ</h3>
-            <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d125385.19091856247!2d106.46568259726565!3d10.865745499999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752b2a11844fb9%3A0xbed3d5f0a6d6e0fe!2zVHLGsOG7nW5nIMSQ4bqhaSBI4buNYyBHaWFvIFRow7RuZyBW4bqtbiBU4bqjaSBUaMOgbmggUGjhu5EgSOG7kyBDaMOtIE1pbmggKFVUSCkgLSBDxqEgc-G7nyAz!5e0!3m2!1svi!2s!4v1722962397271!5m2!1svi!2s"
-                width="370" height="270" style="border:0;" allowfullscreen="" loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
-
-    </div>
-
-    <p class="credit">  @ <?php echo date('Y'); ?> by <span>Công ty TNHH Thương Mại và Dịch Vụ Kỹ Thuật NEXGEN-LAPTOP - GPĐKKD: 0316172372 </span> </p>
-
-</section>
+    </footer>
