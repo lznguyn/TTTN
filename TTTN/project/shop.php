@@ -8,23 +8,108 @@ $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 // Số sản phẩm mỗi trang
 $products_per_page = 6;
 
-// Tính tổng số sản phẩm
-$total_products_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM `products`") or die('query failed');
-$total_products = mysqli_fetch_assoc($total_products_query)['total'];
+// ==== LẤY FILTER TỪ QUERY STRING ====
+$sort = isset($_GET['sort']) ? $_GET['sort'] : '';
+$search      = isset($_GET['search']) ? trim($_GET['search']) : '';
+$price_range = isset($_GET['price_range']) ? (array)$_GET['price_range'] : [];
+$brands      = isset($_GET['brand']) ? (array)$_GET['brand'] : [];
+$categories  = isset($_GET['category']) ? (array)$_GET['category'] : [];
 
-// Tính tổng số trang
-$total_pages = ceil($total_products / $products_per_page);
+// Escape chuỗi để đưa vào SQL (PHẢI làm trước khi dùng)
+$search_esc = mysqli_real_escape_string($conn, $search);
 
-// Lấy trang hiện tại từ URL (mặc định là trang 1)
+// ==== BUILD WHERE ====
+$where = [];
+
+if ($search_esc !== '') {
+    $where[] = "(name LIKE '%$search_esc%' OR description LIKE '%$search_esc%')";
+}
+
+// Price range
+$priceConditions = [];
+foreach ($price_range as $p) {
+    switch ($p) {
+        case 'under-20':
+            $priceConditions[] = "price < 20000000";
+            break;
+        case '20-30':
+            $priceConditions[] = "(price >= 20000000 AND price <= 30000000)";
+            break;
+        case '30-50':
+            $priceConditions[] = "(price >= 30000000 AND price <= 50000000)";
+            break;
+        case 'over-50':
+            $priceConditions[] = "price > 50000000";
+            break;
+    }
+}
+if ($priceConditions) {
+    $where[] = '(' . implode(' OR ', $priceConditions) . ')';
+}
+
+// Brand
+if ($brands) {
+    $brandEscaped = array_map(function($b) use ($conn) {
+        return "'" . mysqli_real_escape_string($conn, $b) . "'";
+    }, $brands);
+    $where[] = 'brand IN (' . implode(',', $brandEscaped) . ')';
+}
+
+// Category
+if ($categories) {
+    $catEscaped = array_map(function($c) use ($conn) {
+        return "'" . mysqli_real_escape_string($conn, $c) . "'";
+    }, $categories);
+    $where[] = 'category IN (' . implode(',', $catEscaped) . ')';
+}
+
+$whereSql = '';
+if ($where) {
+    $whereSql = ' WHERE ' . implode(' AND ', $where);
+}
+// ==== SORT / ORDER BY ====
+$orderBy = ' ORDER BY id DESC'; // mặc định (hoặc created_at nếu có)
+
+switch ($sort) {
+    case 'price-asc':
+        $orderBy = ' ORDER BY price ASC';
+        break;
+    case 'price-desc':
+        $orderBy = ' ORDER BY price DESC';
+        break;
+    case 'name-asc':
+        $orderBy = ' ORDER BY name ASC';
+        break;
+    case 'newest':
+        // đổi created_at thành field ngày tạo thực tế của bảng
+        $orderBy = ' ORDER BY created_at DESC';
+        break;
+}
+
+
+// ==== PHÂN TRANG ====
 $current_page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($current_page < 1) $current_page = 1;
 
-// Xác định vị trí bắt đầu cho truy vấn
 $start_from = ($current_page - 1) * $products_per_page;
 
-// Lấy sản phẩm từ cơ sở dữ liệu
-$select_products = mysqli_query($conn, "SELECT * FROM `products` LIMIT $start_from, $products_per_page") or die('query failed');
+// ==== ĐẾM TỔNG SẢN PHẨM ====
+$total_products_query = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS total FROM `products` $whereSql"
+) or die(mysqli_error($conn));
 
-// Thêm sản phẩm vào giỏ hàng
+$total_products = (int)mysqli_fetch_assoc($total_products_query)['total'];
+$total_pages = max(1, ceil($total_products / $products_per_page));
+
+// ==== LẤY SẢN PHẨM ====
+$select_products = mysqli_query(
+    $conn,
+    "SELECT * FROM `products` $whereSql $orderBy LIMIT $start_from, $products_per_page"
+) or die(mysqli_error($conn));
+
+
+// ==== XỬ LÝ GIỎ HÀNG ====
 if (isset($_POST['add_to_cart'])) {
     if ($user_id == null) {
         header('Location: login.php'); // Chuyển đến trang đăng nhập nếu chưa đăng nhập
@@ -37,19 +122,31 @@ if (isset($_POST['add_to_cart'])) {
     $product_quantity = (int)$_POST['product_quantity'];
 
     // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-    $check_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE name = '$product_name' AND user_id = '$user_id'") or die('query failed');
+    $check_cart = mysqli_query($conn, "SELECT * FROM `cart` WHERE name = '$product_name' AND user_id = '$user_id'") 
+        or die(mysqli_error($conn));
 
     if (mysqli_num_rows($check_cart) > 0) {
         $_SESSION['cart_message'] = 'Product is already added to the cart!';
     } else {
         mysqli_query($conn, "INSERT INTO `cart`(user_id, name, price, quantity, image) 
-            VALUES('$user_id', '$product_name', '$product_price', '$product_quantity', '$product_image')") or die('query failed');
+            VALUES('$user_id', '$product_name', '$product_price', '$product_quantity', '$product_image')") 
+            or die(mysqli_error($conn));
         $_SESSION['cart_message'] = 'Product has been added to the cart successfully!';
     }
 
     header('Location: ' . $_SERVER['PHP_SELF'] . '?page=' . $current_page);
     exit();
 }
+// Tính range đang hiển thị
+$show_from = $total_products > 0 ? $start_from + 1 : 0;
+$show_to   = min($start_from + $products_per_page, $total_products);
+
+// Build base url giữ lại filter khi phân trang
+$query_params = $_GET;
+unset($query_params['page']);
+$base_query = http_build_query($query_params);
+$base_url   = $_SERVER['PHP_SELF'] . ($base_query ? ('?' . $base_query . '&') : '?');
+
 
 // Hiển thị thông báo
 if (isset($_SESSION['cart_message'])) {
@@ -57,6 +154,7 @@ if (isset($_SESSION['cart_message'])) {
     unset($_SESSION['cart_message']);
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -125,122 +223,133 @@ if (isset($_SESSION['cart_message'])) {
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Sidebar Filters -->
             <div class="lg:w-1/4">
-                <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+                <form method="get" class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">                    
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Bộ Lọc</h3>
                     
                     <!-- Search -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
                         <div class="relative">
-                            <input type="text" placeholder="Tìm sản phẩm..." 
-                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="search" placeholder="Tìm sản phẩm..."
+                                value="<?php echo htmlspecialchars($search); ?>"
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
                     </div>
-
                     <!-- Price Range -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Khoảng giá</label>
                         <div class="space-y-2">
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="price_range[]" value="under-20"
+                                    <?php echo in_array('under-20', $price_range) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Dưới 20 triệu</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="price_range[]" value="20-30"
+                                    <?php echo in_array('20-30', $price_range) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">20 - 30 triệu</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="price_range[]" value="30-50"
+                                    <?php echo in_array('30-50', $price_range) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">30 - 50 triệu</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="price_range[]" value="over-50"
+                                    <?php echo in_array('over-50', $price_range) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Trên 50 triệu</span>
                             </label>
                         </div>
                     </div>
+
 
                     <!-- Brand Filter -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Thương hiệu</label>
                         <div class="space-y-2">
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="brand[]" value="Apple"
+                                    <?php echo in_array('Apple', $brands) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Apple</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="brand[]" value="Dell"
+                                    <?php echo in_array('Dell', $brands) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Dell</span>
                             </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">HP</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Lenovo</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">ASUS</span>
-                            </label>
+                            <!-- HP, Lenovo, ASUS tương tự -->
                         </div>
                     </div>
+
 
                     <!-- Category Filter -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Danh mục</label>
                         <div class="space-y-2">
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="category[]" value="Gaming"
+                                    <?php echo in_array('Gaming', $categories) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Gaming</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="category[]" value="Văn phòng"
+                                    <?php echo in_array('Văn phòng', $categories) ? 'checked' : ''; ?>
+                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                 <span class="ml-2 text-sm text-gray-600">Văn phòng</span>
                             </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Đồ họa</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Ultrabook</span>
-                            </label>
+                            <!-- Đồ họa, Ultrabook tương tự -->
                         </div>
                     </div>
 
-                    <button class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                        Áp dụng bộ lọc
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                    Áp dụng bộ lọc
                     </button>
-                </div>
+                </form> <!-- đóng form -->
+
             </div>
+        
 
             <!-- Products Section -->
             <div class="lg:w-3/4">
                 <!-- Sort and View Options -->
-                <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="flex items-center space-x-4">
-                            <span class="text-gray-600">Hiển thị <span class="font-semibold">1-6</span> của <span class="font-semibold">24</span> sản phẩm</span>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option>Sắp xếp theo</option>
-                                <option>Giá: Thấp đến cao</option>
-                                <option>Giá: Cao đến thấp</option>
-                                <option>Tên: A-Z</option>
-                                <option>Mới nhất</option>
-                            </select>
-                            <div class="flex border border-gray-300 rounded-lg overflow-hidden">
-                                <button class="p-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                                    <i class="fas fa-th-large"></i>
-                                </button>
-                                <button class="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-                                    <i class="fas fa-list"></i>
-                                </button>
-                            </div>
+                <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col sm:flex-row justify-between gap-4">
+                    <div class="text-gray-600">
+                        Hiển thị
+                        <span class="font-semibold">
+                            <?php echo $show_from . '-' . $show_to; ?>
+                        </span>
+                        trong
+                        <span class="font-semibold">
+                            <?php echo $total_products; ?>
+                        </span>
+                        sản phẩm
+                    </div>
+                   <div class="flex items-center space-x-4">
+                        <select id="sortSelect"
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Sắp xếp theo</option>
+                            <option value="price-asc"  <?php echo $sort === 'price-asc'  ? 'selected' : ''; ?>>Giá: Thấp đến cao</option>
+                            <option value="price-desc" <?php echo $sort === 'price-desc' ? 'selected' : ''; ?>>Giá: Cao đến thấp</option>
+                            <option value="name-asc"   <?php echo $sort === 'name-asc'   ? 'selected' : ''; ?>>Tên: A-Z</option>
+                            <option value="newest"     <?php echo $sort === 'newest'     ? 'selected' : ''; ?>>Mới nhất</option>
+                        </select>
+                        <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                            <button class="p-2 bg-blue-600 text-white">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button class="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                                <i class="fas fa-list"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -517,10 +626,22 @@ if (isset($_SESSION['cart_message'])) {
         });
 
         // Sort functionality
-        document.querySelector('select').addEventListener('change', function() {
-            // Add sort logic here
-            console.log('Sort changed:', this.value);
-        });
+        // Sort functionality (dùng GET param 'sort')
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function () {
+                const url = new URL(window.location.href);
+                if (this.value) {
+                    url.searchParams.set('sort', this.value);
+                } else {
+                    url.searchParams.delete('sort');
+                }
+                // khi đổi sort thì quay về page 1 cho chắc
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
+        }
+
 
         // Intersection Observer for animations
         const observerOptions = {
