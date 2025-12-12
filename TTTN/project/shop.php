@@ -29,17 +29,20 @@ if ($search_esc !== '') {
 $priceConditions = [];
 foreach ($price_range as $p) {
     switch ($p) {
-        case 'under-20':
+        case 'Under20':
             $priceConditions[] = "price < 20000000";
             break;
-        case '20-30':
+        case 'From20To30':
             $priceConditions[] = "(price >= 20000000 AND price <= 30000000)";
             break;
-        case '30-50':
+        case 'From30To50':
             $priceConditions[] = "(price >= 30000000 AND price <= 50000000)";
             break;
-        case 'over-50':
+        case 'Over50':
             $priceConditions[] = "price > 50000000";
+            break;
+        case 'Over100':
+            $priceConditions[] = "price > 100000000";
             break;
     }
 }
@@ -107,6 +110,34 @@ $select_products = mysqli_query(
     $conn,
     "SELECT * FROM `products` $whereSql $orderBy LIMIT $start_from, $products_per_page"
 ) or die(mysqli_error($conn));
+$sql = "SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC";
+$result = $conn->query($sql);
+
+$allCategories = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $allCategories[] = $row;
+    }
+    $result->free();
+}
+// ====== LOAD PRICE RANGE CONFIG ======
+$sqlPrice = "SELECT * FROM price WHERE is_active = 1 ORDER BY sort_order ASC, name ASC";
+$resultPrice = $conn->query($sqlPrice);
+
+$allPrices = [];
+if ($resultPrice && $resultPrice->num_rows > 0) {
+    while ($row = $resultPrice->fetch_assoc()) {
+        $allPrices[] = $row;
+    }
+    $resultPrice->free();
+}
+
+
+// $selectedCategories là array category user đã chọn trên URL (GET/POST)
+$selectedCategories = $_GET['category'] ?? [];  // hoặc $_POST tùy form method
+if (!is_array($selectedCategories)) {
+    $selectedCategories = [$selectedCategories];
+}
 
 
 // ==== XỬ LÝ GIỎ HÀNG ====
@@ -237,35 +268,30 @@ if (isset($_SESSION['cart_message'])) {
                         </div>
                     </div>
                     <!-- Price Range -->
+                   <!-- Price Range -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Khoảng giá</label>
                         <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="price_range[]" value="under-20"
-                                    <?php echo in_array('under-20', $price_range) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Dưới 20 triệu</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="price_range[]" value="20-30"
-                                    <?php echo in_array('20-30', $price_range) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">20 - 30 triệu</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="price_range[]" value="30-50"
-                                    <?php echo in_array('30-50', $price_range) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">30 - 50 triệu</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="price_range[]" value="over-50"
-                                    <?php echo in_array('over-50', $price_range) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Trên 50 triệu</span>
-                            </label>
+                            <?php foreach ($allPrices as $priceRow): ?>
+                                <?php
+                                    $value   = $priceRow['value']; // ví dụ: under-20, 20-30...
+                                    $label   = $priceRow['name'];  // ví dụ: Dưới 20 triệu
+                                    $checked = in_array($value, $price_range);
+                                ?>
+                                <label class="flex items-center">
+                                    <input type="checkbox"
+                                        name="price_range[]"
+                                        value="<?php echo htmlspecialchars($value); ?>"
+                                        <?php echo $checked ? 'checked' : ''; ?>
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-600">
+                                        <?php echo htmlspecialchars($label); ?>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
                         </div>
-                    </div>
+                    </div>                                      
+
 
 
                     <!-- Brand Filter -->
@@ -293,19 +319,23 @@ if (isset($_SESSION['cart_message'])) {
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-3">Danh mục</label>
                         <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="category[]" value="Gaming"
-                                    <?php echo in_array('Gaming', $categories) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Gaming</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" name="category[]" value="Văn phòng"
-                                    <?php echo in_array('Văn phòng', $categories) ? 'checked' : ''; ?>
-                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Văn phòng</span>
-                            </label>
-                            <!-- Đồ họa, Ultrabook tương tự -->
+                            <?php foreach ($allCategories as $cat): ?>
+                                <?php
+                                    $value   = $cat['value']; // ví dụ 'Gaming'
+                                    $label   = $cat['name'];  // ví dụ 'Gaming', 'Văn phòng'
+                                    $checked = in_array($value, $selectedCategories);
+                                ?>
+                                <label class="flex items-center">
+                                    <input type="checkbox"
+                                        name="category[]"
+                                        value="<?php echo htmlspecialchars($value); ?>"
+                                        <?php echo $checked ? 'checked' : ''; ?>
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-sm text-gray-600">
+                                        <?php echo htmlspecialchars($label); ?>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
                         </div>
                     </div>
 
@@ -333,24 +363,6 @@ if (isset($_SESSION['cart_message'])) {
                             <?php echo $total_products; ?>
                         </span>
                         sản phẩm
-                    </div>
-                   <div class="flex items-center space-x-4">
-                        <select id="sortSelect"
-                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Sắp xếp theo</option>
-                            <option value="price-asc"  <?php echo $sort === 'price-asc'  ? 'selected' : ''; ?>>Giá: Thấp đến cao</option>
-                            <option value="price-desc" <?php echo $sort === 'price-desc' ? 'selected' : ''; ?>>Giá: Cao đến thấp</option>
-                            <option value="name-asc"   <?php echo $sort === 'name-asc'   ? 'selected' : ''; ?>>Tên: A-Z</option>
-                            <option value="newest"     <?php echo $sort === 'newest'     ? 'selected' : ''; ?>>Mới nhất</option>
-                        </select>
-                        <div class="flex border border-gray-300 rounded-lg overflow-hidden">
-                            <button class="p-2 bg-blue-600 text-white">
-                                <i class="fas fa-th-large"></i>
-                            </button>
-                            <button class="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                                <i class="fas fa-list"></i>
-                            </button>
-                        </div>
                     </div>
                 </div>
 

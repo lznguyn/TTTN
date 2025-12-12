@@ -493,6 +493,52 @@ section {
   margin-top: 0;
 }
 
+/* --- Dropdown "Cấu hình" trong header --- */
+.header .navbar .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.header .navbar .dropbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+/* Menu con */
+.header .navbar .dropdown-content {
+    position: absolute !important;   /* ép tuyệt đối */
+    display: none !important;        /* ẩn mặc định */
+    top: 100%;
+    left: 0;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 4px 0;
+    z-index: 999;
+}
+
+.header .navbar .dropdown-content a {
+    display: block;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: #111827;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.header .navbar .dropdown-content a:hover {
+    background-color: #f3f4f6;
+}
+
+/* Hover vào "Cấu hình" thì hiện menu */
+.header .navbar .dropdown:hover .dropdown-content {
+    display: block !important;
+}
+
+
 /* media queries  */
 
 @media (max-width: 991px) {
