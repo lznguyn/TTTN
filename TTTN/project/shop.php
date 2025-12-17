@@ -22,7 +22,7 @@ $search_esc = mysqli_real_escape_string($conn, $search);
 $where = [];
 
 if ($search_esc !== '') {
-    $where[] = "(name LIKE '%$search_esc%' OR description LIKE '%$search_esc%')";
+    $where[] = "(name LIKE '%$search_esc%')";
 }
 
 // Price range

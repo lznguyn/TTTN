@@ -10,16 +10,23 @@ if (!isset($admin_id)) {
 }
 
 if (isset($_POST['update_order'])) {
-    $order_update_id = $_POST['order_id'];
-    $update_payment  = $_POST['update_payment'];
+    $order_update_id = (int)($_POST['order_id'] ?? 0);
+    $update_payment  = $_POST['update_payment'] ?? '';
 
-    mysqli_query(
-        $conn,
-        "UPDATE `orders` SET payment_status = '$update_payment' WHERE id = '$order_update_id'"
-    ) or die('query failed');
+    // chỉ cho phép đúng enum
+    $allowed = ['pending', 'completed'];
+    if (!in_array($update_payment, $allowed, true)) {
+        $message[] = 'Trạng thái không hợp lệ!';
+    } else {
+        $stmt = $conn->prepare("UPDATE `orders` SET payment_status = ? WHERE id = ?");
+        $stmt->bind_param("si", $update_payment, $order_update_id);
+        $stmt->execute();
+        $stmt->close();
 
-    $message[] = 'Trạng thái thanh toán đã được cập nhật!';
+        $message[] = 'Trạng thái thanh toán đã được cập nhật!';
+    }
 }
+
 
 if (isset($_GET['delete'])) {
     $delete_id = $_GET['delete'];
@@ -182,14 +189,16 @@ if (isset($_GET['delete'])) {
                                 <label class="block text-xs font-medium text-gray-600 mb-1">
                                     Cập nhật trạng thái thanh toán
                                 </label>
-                                <select name="update_payment"
-                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                    <option value="" selected disabled>
-                                        <?php echo htmlspecialchars($fetch_orders['payment_status']); ?>
+                                <select name="update_payment" required
+                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+
+                                    <option value="pending"   <?php echo $fetch_orders['payment_status'] === 'pending' ? 'selected' : ''; ?>>
+                                        Đang duyệt
                                     </option>
-                                    <option value="Đang duyệt">Đang duyệt</option>
-                                    <option value="Thành công">Thành công</option>
+                                    <option value="completed" <?php echo $fetch_orders['payment_status'] === 'completed' ? 'selected' : ''; ?>>
+                                        Thành công
+                                    </option>
                                 </select>
                             </div>
 
