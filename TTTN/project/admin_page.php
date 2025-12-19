@@ -10,49 +10,55 @@ if (!$admin_id) { // nếu chưa đăng nhập
     exit;
 }
 
+function sumRevenueByStatus(mysqli $conn, string $status): float
+{
+    $sql = "
+        SELECT
+            SUM(
+                CASE
+                    WHEN COALESCE(final_price, 0) > 0 THEN COALESCE(final_price, 0)
+                    ELSE GREATEST(0, COALESCE(total_price, 0) - COALESCE(discount_amount, 0))
+                END
+            ) AS revenue
+        FROM orders
+        WHERE payment_status = ?
+    ";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) return 0;
+
+    $stmt->bind_param("s", $status);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+
+    return (float)($row['revenue'] ?? 0);
+}
+
+/**
+ * Count rows helper
+ */
+function countRows(mysqli $conn, string $sql): int
+{
+    $q = mysqli_query($conn, $sql);
+    if (!$q) return 0;
+    return mysqli_num_rows($q);
+}
+
 // ==== TÍNH SẴN CÁC SỐ LIỆU ====
 
 // Tổng tiền pending
-$total_pendings = 0;
-$select_pending = mysqli_query($conn, "SELECT total_price FROM `orders` WHERE payment_status = 'pending'") or die('query failed');
-if (mysqli_num_rows($select_pending) > 0) {
-    while ($fetch_pendings = mysqli_fetch_assoc($select_pending)) {
-        $total_pendings += (int)$fetch_pendings['total_price'];
-    }
-}
+$total_pendings  = sumRevenueByStatus($conn, 'pending');
+$total_completed = sumRevenueByStatus($conn, 'completed');
+$number_of_orders   = countRows($conn, "SELECT id FROM `orders`");
+$number_of_products = countRows($conn, "SELECT id FROM `products`");
 
-// Tổng tiền completed
-$total_completed = 0;
-$select_completed = mysqli_query($conn, "SELECT total_price FROM `orders` WHERE payment_status = 'completed'") or die('query failed');
-if (mysqli_num_rows($select_completed) > 0) {
-    while ($fetch_completed = mysqli_fetch_assoc($select_completed)) {
-        $total_completed += (int)$fetch_completed['total_price'];
-    }
-}
+$number_of_users  = countRows($conn, "SELECT id FROM `users` WHERE user_type = 'user'");
+$number_of_admins = countRows($conn, "SELECT id FROM `users` WHERE user_type = 'admin'");
+$number_of_account = countRows($conn, "SELECT id FROM `users`");
 
-// Tổng đơn hàng
-$select_orders    = mysqli_query($conn, "SELECT * FROM `orders`") or die('query failed');
-$number_of_orders = mysqli_num_rows($select_orders);
-
-// Tổng sản phẩm
-$select_products    = mysqli_query($conn, "SELECT * FROM `products`") or die('query failed');
-$number_of_products = mysqli_num_rows($select_products);
-
-// Tài khoản user
-$select_users    = mysqli_query($conn, "SELECT * FROM `users` WHERE user_type = 'user'") or die('query failed');
-$number_of_users = mysqli_num_rows($select_users);
-
-// Tài khoản admin
-$select_admins    = mysqli_query($conn, "SELECT * FROM `users` WHERE user_type = 'admin'") or die('query failed');
-$number_of_admins = mysqli_num_rows($select_admins);
-
-// Tổng tài khoản
-$select_account    = mysqli_query($conn, "SELECT * FROM `users`") or die('query failed');
-$number_of_account = mysqli_num_rows($select_account);
-
-// Thông báo mới
-$select_messages    = mysqli_query($conn, "SELECT * FROM `message`") or die('query failed');
-$number_of_messages = mysqli_num_rows($select_messages);
+$number_of_messages = countRows($conn, "SELECT id FROM `message`");
 ?>
 <!DOCTYPE html>
 <html lang="vi">
