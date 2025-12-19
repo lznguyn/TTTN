@@ -1,23 +1,49 @@
 <?php
 include 'config.php';
-
 session_start();
 
 $admin_id = $_SESSION['admin_id'] ?? null;
-if (!isset($admin_id)) {
+if (!$admin_id) {
     header('Location: login.php');
     exit;
 }
 
+$message = [];
+
+/**
+ * Normalize payment status về 2 giá trị: pending | completed
+ * Hỗ trợ cả dữ liệu cũ dùng tiếng Việt.
+ */
+function normalize_payment_status(string $status): string {
+    $s = trim(mb_strtolower($status, 'UTF-8'));
+    if ($s === 'pending' || $s === 'đang duyệt' || $s === 'dang duyet') return 'pending';
+    if ($s === 'completed' || $s === 'thành công' || $s === 'thanh cong') return 'completed';
+    // fallback
+    return $status;
+}
+
+function status_badge_class(string $normalized): array {
+    if ($normalized === 'completed') {
+        return ['bg-emerald-50 text-emerald-700', 'bg-emerald-500', 'Thành công'];
+    }
+    if ($normalized === 'pending') {
+        return ['bg-amber-50 text-amber-700', 'bg-amber-500', 'Đang duyệt'];
+    }
+    return ['bg-gray-100 text-gray-600', 'bg-gray-400', $normalized];
+}
+
+// ===== Update Order Status =====
 if (isset($_POST['update_order'])) {
     $order_update_id = (int)($_POST['order_id'] ?? 0);
     $update_payment  = $_POST['update_payment'] ?? '';
 
-    // chỉ cho phép đúng enum
     $allowed = ['pending', 'completed'];
-    if (!in_array($update_payment, $allowed, true)) {
+    if ($order_update_id <= 0) {
+        $message[] = 'Order ID không hợp lệ!';
+    } elseif (!in_array($update_payment, $allowed, true)) {
         $message[] = 'Trạng thái không hợp lệ!';
     } else {
+        // Lưu về dạng chuẩn pending/completed
         $stmt = $conn->prepare("UPDATE `orders` SET payment_status = ? WHERE id = ?");
         $stmt->bind_param("si", $update_payment, $order_update_id);
         $stmt->execute();
@@ -27,36 +53,34 @@ if (isset($_POST['update_order'])) {
     }
 }
 
-
+// ===== Delete Order =====
 if (isset($_GET['delete'])) {
-    $delete_id = $_GET['delete'];
-    mysqli_query($conn, "DELETE FROM `orders` WHERE id = '$delete_id'") or die('query failed');
-    header('location:admin_orders.php');
-    exit;
+    $delete_id = (int)($_GET['delete'] ?? 0);
+    if ($delete_id > 0) {
+        $stmt = $conn->prepare("DELETE FROM `orders` WHERE id = ?");
+        $stmt->bind_param("i", $delete_id);
+        $stmt->execute();
+        $stmt->close();
+        header('location:admin_orders.php');
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đơn hàng</title>
 
-    <!-- font awesome -->
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-    <!-- Tailwind giống các trang admin mới -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- css cũ cho header/menu nếu cần -->
     <link rel="stylesheet" href="css/admin_style.css">
 </head>
 
 <body class="bg-gray-100 min-h-screen">
-
 <?php include 'admin_header.php'; ?>
 
 <main class="max-w-6xl mx-auto px-4 lg:px-0 py-8 lg:py-10">
@@ -83,6 +107,7 @@ if (isset($_GET['delete'])) {
     </div>
 
     <?php
+    // Lấy orders. Nếu DB bạn có placed_on dạng string thì ORDER BY id DESC ok nhất.
     $select_orders = mysqli_query($conn, "SELECT * FROM `orders` ORDER BY id DESC") or die('query failed');
     ?>
 
@@ -90,42 +115,40 @@ if (isset($_GET['delete'])) {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <?php while ($fetch_orders = mysqli_fetch_assoc($select_orders)): ?>
                 <?php
-                $status = $fetch_orders['payment_status'];
+                // ====== GIÁ ======
+                $baseTotal  = (float)($fetch_orders['total_price'] ?? 0);        // giá gốc
+                $discount   = (float)($fetch_orders['discount_amount'] ?? 0);   // tiền giảm
+                $finalTotal = (float)($fetch_orders['final_price'] ?? 0);       // giá sau giảm
+                $couponCode = $fetch_orders['coupon_code'] ?? null;
 
-                // badge theo trạng thái
-                $badgeClass = 'bg-gray-100 text-gray-600';
-                if ($status === 'Thành công' || $status === 'completed') {
-                    $badgeClass = 'bg-emerald-50 text-emerald-700';
-                } elseif ($status === 'Đang duyệt' || $status === 'pending') {
-                    $badgeClass = 'bg-amber-50 text-amber-700';
-                }
+                // fallback: đơn cũ chưa có final_price
+                if ($finalTotal <= 0 && $discount > 0) $finalTotal = max(0, $baseTotal - $discount);
+                if ($finalTotal <= 0) $finalTotal = $baseTotal;
+
+                // ====== STATUS ======
+                $rawStatus = (string)($fetch_orders['payment_status'] ?? '');
+                $normalized = normalize_payment_status($rawStatus);
+                [$badgeClass, $dotClass, $badgeText] = status_badge_class($normalized);
                 ?>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3">
-                    <!-- Header card: ID + date + status -->
+
+                    <!-- Header: ID + date + status -->
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">
                                 Đơn hàng #<?php echo (int)$fetch_orders['id']; ?>
                             </div>
                             <div class="text-xs text-gray-400 mt-1">
-                                Ngày đặt: <span class="font-medium text-gray-600">
-                                    <?php echo htmlspecialchars($fetch_orders['placed_on']); ?>
+                                Ngày đặt:
+                                <span class="font-medium text-gray-600">
+                                    <?php echo htmlspecialchars($fetch_orders['placed_on'] ?? ''); ?>
                                 </span>
                             </div>
                         </div>
+
                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>">
-                            <span class="w-2 h-2 rounded-full
-                                <?php
-                                if ($status === 'Thành công' || $status === 'completed') {
-                                    echo ' bg-emerald-500';
-                                } elseif ($status === 'Đang duyệt' || $status === 'pending') {
-                                    echo ' bg-amber-500';
-                                } else {
-                                    echo ' bg-gray-400';
-                                }
-                                ?>">
-                            </span>
-                            <?php echo htmlspecialchars($status); ?>
+                            <span class="w-2 h-2 rounded-full <?php echo $dotClass; ?>"></span>
+                            <?php echo htmlspecialchars($badgeText); ?>
                         </span>
                     </div>
 
@@ -134,29 +157,30 @@ if (isset($_GET['delete'])) {
                         <div class="space-y-1">
                             <p class="text-gray-500">User ID:
                                 <span class="font-semibold text-gray-800">
-                                    <?php echo htmlspecialchars($fetch_orders['user_id']); ?>
+                                    <?php echo htmlspecialchars($fetch_orders['user_id'] ?? ''); ?>
                                 </span>
                             </p>
                             <p class="text-gray-500">Tên:
                                 <span class="font-semibold text-gray-800">
-                                    <?php echo htmlspecialchars($fetch_orders['name']); ?>
+                                    <?php echo htmlspecialchars($fetch_orders['name'] ?? ''); ?>
                                 </span>
                             </p>
                             <p class="text-gray-500">Số điện thoại:
                                 <span class="font-semibold text-gray-800">
-                                    <?php echo htmlspecialchars($fetch_orders['number']); ?>
+                                    <?php echo htmlspecialchars($fetch_orders['number'] ?? ''); ?>
                                 </span>
                             </p>
                             <p class="text-gray-500">Email:
                                 <span class="font-semibold text-gray-800">
-                                    <?php echo htmlspecialchars($fetch_orders['email']); ?>
+                                    <?php echo htmlspecialchars($fetch_orders['email'] ?? ''); ?>
                                 </span>
                             </p>
                         </div>
+
                         <div class="space-y-1">
                             <p class="text-gray-500">Địa chỉ giao hàng:</p>
                             <p class="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">
-                                <?php echo nl2br(htmlspecialchars($fetch_orders['address'])); ?>
+                                <?php echo nl2br(htmlspecialchars($fetch_orders['address'] ?? '')); ?>
                             </p>
                         </div>
                     </div>
@@ -165,18 +189,41 @@ if (isset($_GET['delete'])) {
                     <div class="mt-1 space-y-1 text-sm">
                         <p class="text-gray-500">Sản phẩm đặt hàng:</p>
                         <p class="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2">
-                            <?php echo htmlspecialchars($fetch_orders['total_products']); ?>
+                            <?php echo htmlspecialchars($fetch_orders['total_products'] ?? ''); ?>
                         </p>
-                        <div class="flex items-center justify-between mt-2">
-                            <p class="text-gray-500">Hình thức thanh toán:
+
+                        <div class="flex items-start justify-between gap-3 mt-2">
+                            <p class="text-gray-500">
+                                Hình thức thanh toán:
                                 <span class="font-semibold text-gray-800">
-                                    <?php echo htmlspecialchars($fetch_orders['method']); ?>
+                                    <?php echo htmlspecialchars($fetch_orders['method'] ?? ''); ?>
                                 </span>
                             </p>
-                            <p class="text-sm font-bold text-blue-600">
-                                <?php echo number_format($fetch_orders['total_price']); ?>
-                                <span class="text-xs text-gray-400">VNĐ</span>
-                            </p>
+
+                            <!-- GIÁ SAU GIẢM (đúng) -->
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-blue-600">
+                                    <?php echo number_format($finalTotal, 0, ',', '.'); ?>
+                                    <span class="text-xs text-gray-400">VNĐ</span>
+                                </p>
+
+                                <!-- nếu có giảm thì show giá gốc + giảm + coupon -->
+                                <?php if ($discount > 0): ?>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <span class="line-through">
+                                            <?php echo number_format($baseTotal, 0, ',', '.'); ?> VNĐ
+                                        </span>
+                                        <span class="text-green-600 font-semibold ml-2">
+                                            -<?php echo number_format($discount, 0, ',', '.'); ?> VNĐ
+                                        </span>
+                                        <?php if (!empty($couponCode)): ?>
+                                            <span class="ml-2 text-gray-600">
+                                                (Mã: <span class="font-semibold"><?php echo htmlspecialchars($couponCode); ?></span>)
+                                            </span>
+                                        <?php endif; ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
 
@@ -190,13 +237,12 @@ if (isset($_GET['delete'])) {
                                     Cập nhật trạng thái thanh toán
                                 </label>
                                 <select name="update_payment" required
-                                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
-                                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-
-                                    <option value="pending"   <?php echo $fetch_orders['payment_status'] === 'pending' ? 'selected' : ''; ?>>
+                                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm
+                                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                    <option value="pending"   <?php echo ($normalized === 'pending' ? 'selected' : ''); ?>>
                                         Đang duyệt
                                     </option>
-                                    <option value="completed" <?php echo $fetch_orders['payment_status'] === 'completed' ? 'selected' : ''; ?>>
+                                    <option value="completed" <?php echo ($normalized === 'completed' ? 'selected' : ''); ?>>
                                         Thành công
                                     </option>
                                 </select>
@@ -230,6 +276,5 @@ if (isset($_GET['delete'])) {
 </main>
 
 <script src="js/admin_script.js"></script>
-
 </body>
 </html>
