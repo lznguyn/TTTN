@@ -42,6 +42,7 @@ if (isset($message)) {
                 <div class="dropdown-content" data-dropdown-content="config">
                     <a href="admin_price.php">Cấu hình giá</a>
                     <a href="admin_categories.php">Cấu hình laptop</a>
+                    <a href="admin_coupou.php">Cấu hình mã giảm giá</a>
                 </div>
             </div>
         </nav>
