@@ -37,6 +37,29 @@ CREATE TABLE `products` (
   `image` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE coupons (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(50) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  discount_type ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+  discount_value DECIMAL(10,2) NOT NULL DEFAULT 0,
+  min_order_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  max_discount DECIMAL(12,2) NULL,
+  start_at DATETIME NULL,
+  end_at DATETIME NULL,
+  usage_limit INT NULL,
+  used_count INT NOT NULL DEFAULT 0,
+  per_user_limit INT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE orders
+ADD COLUMN coupon_code VARCHAR(50) NULL,
+ADD COLUMN discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN final_price DECIMAL(12,2) NOT NULL DEFAULT 0;
+
+
 INSERT INTO `products`(`id`, `name`, `price`, `image`)
 VALUES 
 (1, 'Asus Ryzen AL 9', 20000000, 'asus1.jpg'),
