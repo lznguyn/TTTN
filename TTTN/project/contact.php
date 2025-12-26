@@ -124,7 +124,7 @@ if (isset($_POST['send'])) {
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Hotline</h3>
                     <p class="text-gray-600 mb-4">Liên hệ ngay với chúng tôi</p>
-                    <a href="tel:19001234" class="text-blue-600 font-semibold hover:text-blue-700 transition-colors">1900-1234</a>
+                    <a href="tel:0911809129" class="text-blue-600 font-semibold hover:text-blue-700 transition-colors">0911809129</a>
                     <p class="text-sm text-gray-500 mt-2">8:00 - 22:00 (Hàng ngày)</p>
                 </div>
 
@@ -134,7 +134,14 @@ if (isset($_POST['send'])) {
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Email</h3>
                     <p class="text-gray-600 mb-4">Gửi email cho chúng tôi</p>
-                    <a href="mailto:support@nexgenlaptop.com" class="text-blue-600 font-semibold hover:text-blue-700 transition-colors">support@nexgenlaptop.com</a>
+                    <a
+                    href="https://mail.google.com/mail/?view=cm&fs=1&to=support@nexgenlaptop.com&su=Tu%20van%20NEXGEN%20LAPTOP&body=Chao%20NEXGEN%2C%0A%0AToi%20can%20tu%20van..."
+                    target="_blank"
+                    rel="noopener"
+                    class="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                    >
+                    support@nexgenlaptop.com
+                    </a>
                     <p class="text-sm text-gray-500 mt-2">Phản hồi trong 24h</p>
                 </div>
 
@@ -144,8 +151,14 @@ if (isset($_POST['send'])) {
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-3">Địa chỉ</h3>
                     <p class="text-gray-600 mb-4">Ghé thăm showroom của chúng tôi</p>
-                    <p class="text-blue-600 font-semibold">123 Nguyễn Văn Cừ</p>
-                    <p class="text-sm text-gray-500 mt-2">Quận 1, TP. Hồ Chí Minh</p>
+                   <a
+                    href="https://www.google.com/maps/place/Mandarin+Oriental+Wangfujing+Beijing/@39.9388838,116.3974589,10z/data=!4m12!1m2!2m1!1zS2jDoWNoIHPhuqFu!3m8!1s0x35f052cec352f5b1:0x37bce60f8282d2cf!5m2!4m1!1i2!8m2!3d39.912174!4d116.411285!16s%2Fg%2F11gnn2zsg3!5m1!1e1?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                    >Mandarin Oriental Wangfujing Beijing<br/>
+                    <span class="text-sm text-gray-500 font-normal">北京王府井文华东方酒店</span>
+                    </a>
                 </div>
             </div>
 
@@ -243,13 +256,7 @@ if (isset($_POST['send'])) {
                 <div class="space-y-8 animate-slide-in-right">
                     <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
                         <div class="h-96 bg-gray-200 relative">
-                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.4956929362896!2d106.68427631533417!3d10.776889992319855!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f38f9ed887b%3A0x14aded5703768989!2zMTIzIE5ndXnhu4VuIFbEg24gQ-G7qywgUGjGsOG7nW5nIE5ndXnhu4VuIEPGsCBUcmluaCwgUXXhuq1uIDEsIFRow6BuaCBwaOG7kSBI4buTIENow60gTWluaCwgVmnhu4d0IE5hbQ!5e0!3m2!1svi!2s!4v1647856789123!5m2!1svi!2s" 
-                                    width="100%" 
-                                    height="100%" 
-                                    style="border:0;" 
-                                    allowfullscreen="" 
-                                    loading="lazy" 
-                                    class="absolute inset-0"></iframe>
+                            <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d391566.3391962266!2d116.3974589!3d39.9388838!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x35f052cec352f5b1%3A0x37bce60f8282d2cf!2sMandarin%20Oriental%20Wangfujing%20Beijing!5e0!3m2!1svi!2s!4v1766741105257!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                         </div>
                     </div>
 
