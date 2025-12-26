@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $newName = 'qr-atm-' . time() . '.' . $ext;
 
       // lưu vào đúng folder đang dùng ở checkout: uploaded_img/
-      $targetDir = __DIR__ . '/../uploaded_img/';
+      $targetDir = __DIR__ . '/uploaded_img/';
       if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
 
       $target = $targetDir . $newName;
