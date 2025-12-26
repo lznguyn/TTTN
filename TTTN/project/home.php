@@ -322,7 +322,7 @@ if(isset($_POST['add_to_cart'])){ // kiểm tra người dùng nhấn nút thêm
                             <i class="fas fa-phone text-white text-2xl"></i>
                         </div>
                         <h4 class="text-xl font-semibold text-white mb-2">Hotline</h4>
-                        <p class="text-blue-100">1900-1234</p>
+                        <p class="text-blue-100">0911809129</p>
                     </div>
                     <div class="text-center">
                         <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -336,7 +336,7 @@ if(isset($_POST['add_to_cart'])){ // kiểm tra người dùng nhấn nút thêm
                             <i class="fas fa-map-marker-alt text-white text-2xl"></i>
                         </div>
                         <h4 class="text-xl font-semibold text-white mb-2">Địa chỉ</h4>
-                        <p class="text-blue-100">123 Nguyễn Văn Cừ, Q.1, TP.HCM</p>
+                        <p class="text-blue-100">Mandarin Oriental Wangfujing Beijing</p>
                     </div>
                 </div>
                 

@@ -316,6 +316,21 @@ if (isset($_POST['order_btn'])) {
         redirect_self();
     }
 }
+$atm_setting = null;
+try {
+  $stmt = $conn->prepare("SELECT * FROM payment_settings WHERE payment_key='ATM' LIMIT 1");
+  $stmt->execute();
+  $atm_setting = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
+} catch (Throwable $e) {}
+$momo_setting = null;
+try {
+  $stmt = $conn->prepare("SELECT * FROM payment_settings WHERE payment_key='MOMO' LIMIT 1");
+  $stmt->execute();
+  $momo_setting = $stmt->get_result()->fetch_assoc();
+  $stmt->close();
+} catch (Throwable $e) {}
+
 ?>
 <!DOCTYPE html>
 <html lang="en" style="height:auto; min-height:100%;">
@@ -529,6 +544,71 @@ if (isset($_POST['order_btn'])) {
                                     <p class="text-sm text-gray-600 mt-1">Thanh toán qua ví điện tử MoMo</p>
                                 </div>
                             </label>
+                            <!-- QR ATM -->
+                            <div id="qrATM" class="hidden mt-4 p-4 border border-blue-200 bg-blue-50 rounded-xl">
+                                <?php if (!empty($atm_setting) && (int)$atm_setting['is_enabled'] === 1): ?>
+                                    <div class="flex items-start gap-4">
+                                    <img
+                                        src="uploaded_img/<?php echo htmlspecialchars($atm_setting['qr_image'] ?? 'qr-atm.png'); ?>"
+                                        alt="QR chuyển khoản"
+                                        class="w-40 h-40 object-contain bg-white rounded-lg p-2 border"
+                                    />
+                                    <div class="flex-1">
+                                        <h3 class="font-bold text-gray-900">Quét QR để chuyển khoản</h3>
+                                        <p class="text-sm text-gray-600 mt-1">
+                                        Nội dung chuyển khoản: <b>ORDER_<?php echo $user_id; ?></b> (hoặc mã đơn sau khi đặt).
+                                        </p>
+
+                                        <div class="mt-3 text-sm text-gray-700 space-y-1">
+                                        <div><b>Ngân hàng:</b> <?php echo htmlspecialchars($atm_setting['bank_name'] ?? ''); ?></div>
+                                        <div><b>STK:</b> <?php echo htmlspecialchars($atm_setting['bank_account'] ?? ''); ?></div>
+                                        <div><b>Chủ TK:</b> <?php echo htmlspecialchars($atm_setting['bank_owner'] ?? ''); ?></div>
+                                        </div>
+
+                                        <?php if (!empty($atm_setting['note_text'])): ?>
+                                        <p class="text-xs text-gray-500 mt-3">
+                                            <?php echo htmlspecialchars($atm_setting['note_text']); ?>
+                                        </p>
+                                        <?php endif; ?>
+                                    </div>
+                                    </div>
+                                <?php else: ?>
+                                    <p class="text-sm text-gray-600">Hiện tại chuyển khoản ngân hàng đang tạm tắt.</p>
+                                <?php endif; ?>
+                            </div>
+                            <!-- QR MoMo -->
+                            <div id="qrMomo" class="hidden mt-4 p-4 border border-pink-200 bg-pink-50 rounded-xl">
+                            <?php if (!empty($momo_setting) && (int)$momo_setting['is_enabled'] === 1): ?>
+                                <div class="flex items-start gap-4">
+                                <img
+                                    src="uploaded_img/<?php echo htmlspecialchars($momo_setting['qr_image'] ?? 'qr-momo.png'); ?>"
+                                    alt="QR MoMo"
+                                    class="w-40 h-40 object-contain bg-white rounded-lg p-2 border"
+                                />
+                                <div class="flex-1">
+                                    <h3 class="font-bold text-gray-900">Quét QR để thanh toán MoMo</h3>
+
+                                    <p class="text-sm text-gray-600 mt-1">
+                                    Nội dung: <b>ORDER_<?php echo $user_id; ?></b>
+                                    </p>
+
+                                    <div class="mt-3 text-sm text-gray-700 space-y-1">
+                                    <div><b>SĐT MoMo:</b> <?php echo htmlspecialchars($momo_setting['bank_account'] ?? ''); ?></div>
+                                    <div><b>Tên:</b> <?php echo htmlspecialchars($momo_setting['bank_owner'] ?? ''); ?></div>
+                                    </div>
+
+                                    <?php if (!empty($momo_setting['note_text'])): ?>
+                                    <p class="text-xs text-gray-500 mt-3">
+                                        <?php echo htmlspecialchars($momo_setting['note_text']); ?>
+                                    </p>
+                                    <?php endif; ?>
+                                </div>
+                                </div>
+                            <?php else: ?>
+                                <p class="text-sm text-gray-600">Hiện tại MoMo đang tạm tắt.</p>
+                            <?php endif; ?>
+                            </div>
+
                         </div>
                     </div>
 
@@ -713,6 +793,26 @@ const observer = new IntersectionObserver((entries) => {
 document.querySelectorAll('.animate-fade-in, .animate-slide-in-right').forEach(el => {
     el.style.animationPlayState = 'paused';
     observer.observe(el);
+});
+function updatePaymentQR() {
+  const method = document.querySelector('input[name="method"]:checked')?.value || '';
+  const qrATM  = document.getElementById('qrATM');
+  const qrMomo = document.getElementById('qrMomo');
+
+  // Hide all (nếu tồn tại)
+  if (qrATM)  qrATM.classList.add('hidden');
+  if (qrMomo) qrMomo.classList.add('hidden');
+
+  // Show theo method
+  if (method === 'ATM'  && qrATM)  qrATM.classList.remove('hidden');
+  if (method === 'Momo' && qrMomo) qrMomo.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[name="method"]').forEach(r => {
+    r.addEventListener('change', updatePaymentQR);
+  });
+  updatePaymentQR();
 });
 </script>
 

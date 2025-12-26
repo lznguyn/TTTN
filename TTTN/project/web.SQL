@@ -100,3 +100,19 @@ ALTER TABLE `message` MODIFY `id` int(100) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `orders` MODIFY `id` int(100) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `products` MODIFY `id` int(100) NOT NULL AUTO_INCREMENT;
 ALTER TABLE `users` MODIFY `id` int(100) NOT NULL AUTO_INCREMENT;
+
+CREATE TABLE IF NOT EXISTS payment_settings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  payment_key VARCHAR(50) NOT NULL UNIQUE,   -- 'ATM' | 'MOMO' | ...
+  is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  bank_name VARCHAR(100) NULL,
+  bank_account VARCHAR(50) NULL,
+  bank_owner VARCHAR(100) NULL,
+  qr_image VARCHAR(255) NULL,               -- tên file trong uploaded_img/
+  note_text VARCHAR(255) NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO payment_settings(payment_key, bank_name, bank_account, bank_owner, qr_image, note_text)
+VALUES ('ATM', 'Vietcombank', '0123456789', 'NEXGEN LAPTOP', 'qr-atm.png', '* Sau khi chuyển khoản, shop sẽ xác nhận đơn và gọi lại cho bạn.');
+

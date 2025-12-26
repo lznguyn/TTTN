@@ -40,28 +40,54 @@
                     </ul>
                 </div>
                 
-                <!-- Contact Info -->
                 <div>
                     <h4 class="text-lg font-semibold mb-6">Thông Tin Liên Hệ</h4>
                     <ul class="space-y-3">
+                        <!-- Địa chỉ: mở Google Maps -->
                         <li class="flex items-center space-x-3">
-                            <i class="fas fa-map-marker-alt text-blue-400"></i>
-                            <span class="text-gray-400">123 Nguyễn Văn Cừ, Q.1, TP.HCM</span>
+                        <i class="fas fa-map-marker-alt text-blue-400"></i>
+                        <a
+                            href="https://www.google.com/maps/place/Mandarin+Oriental+Wangfujing+Beijing/@39.9388838,116.3974589,10z/data=!4m12!1m2!2m1!1zS2jDoWNoIHPhuqFu!3m8!1s0x35f052cec352f5b1:0x37bce60f8282d2cf!5m2!4m1!1i2!8m2!3d39.912174!4d116.411285!16s%2Fg%2F11gnn2zsg3!5m1!1e1?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D"
+                            target="_blank"
+                            rel="noopener"
+                            class="text-gray-400 hover:text-white transition-colors underline-offset-4 hover:underline"
+                        >
+                            Mandarin Oriental Wangfujing Beijing
+                        </a>
                         </li>
+
+                        <!-- SĐT: bấm gọi -->
                         <li class="flex items-center space-x-3">
-                            <i class="fas fa-phone text-blue-400"></i>
-                            <span class="text-gray-400">1900-1234</span>
+                        <i class="fas fa-phone text-blue-400"></i>
+                        <a
+                            href="tel:0911809129"
+                            class="text-gray-400 hover:text-white transition-colors underline-offset-4 hover:underline"
+                        >
+                            0911809129
+                        </a>
                         </li>
+
+                        <!-- Email: bấm mở Gmail web (hoặc đổi sang mailto nếu bạn muốn) -->
                         <li class="flex items-center space-x-3">
-                            <i class="fas fa-envelope text-blue-400"></i>
-                            <span class="text-gray-400">support@nexgenlaptop.com</span>
+                        <i class="fas fa-envelope text-blue-400"></i>
+                        <a
+                            href="https://mail.google.com/mail/?view=cm&fs=1&to=support@nexgenlaptop.com"
+                            target="_blank"
+                            rel="noopener"
+                            class="text-gray-400 hover:text-white transition-colors underline-offset-4 hover:underline"
+                        >
+                            support@nexgenlaptop.com
+                        </a>
                         </li>
+
+                        <!-- Giờ làm: không cần link -->
                         <li class="flex items-center space-x-3">
-                            <i class="fas fa-clock text-blue-400"></i>
-                            <span class="text-gray-400">8:00 - 22:00 (Hàng ngày)</span>
+                        <i class="fas fa-clock text-blue-400"></i>
+                        <span class="text-gray-400">8:00 - 22:00 (Hàng ngày)</span>
                         </li>
                     </ul>
-                </div>
+                    </div>
+
             </div>
             
             <div class="border-t border-gray-800 mt-12 pt-8 text-center">

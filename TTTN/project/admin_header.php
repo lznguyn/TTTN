@@ -43,6 +43,8 @@ if (isset($message)) {
                     <a href="admin_price.php">Cấu hình giá</a>
                     <a href="admin_categories.php">Cấu hình laptop</a>
                     <a href="admin_coupou.php">Cấu hình mã giảm giá</a>
+                    <a href="admin_payment_atm.php">Cấu hình QR chuyển khoản</a>
+                    <a href="admin_payment_momo.php">Cấu hình QR MoMo</a>
                 </div>
             </div>
         </nav>
