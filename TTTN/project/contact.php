@@ -258,8 +258,7 @@ if (isset($_POST['send'])) {
                         <div class="h-96 bg-gray-200 relative">
                             <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d391566.3391962266!2d116.3974589!3d39.9388838!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x35f052cec352f5b1%3A0x37bce60f8282d2cf!2sMandarin%20Oriental%20Wangfujing%20Beijing!5e0!3m2!1svi!2s!4v1766741105257!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                         </div>
-                    </div>
-
+                            </div>
                     <div class="bg-white rounded-2xl shadow-lg p-8">
                         <h3 class="text-2xl font-bold text-gray-900 mb-6">Giờ Làm Việc</h3>
                         <div class="space-y-4">

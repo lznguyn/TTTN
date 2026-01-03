@@ -308,7 +308,7 @@ if (isset($_SESSION['cart_message'])) {
                                 <input type="checkbox" name="brand[]" value="Dell"
                                     <?php echo in_array('Dell', $brands) ? 'checked' : ''; ?>
                                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Dell</span>
+                                <span class="ml-2 text-sm text-gray-600">Asus</span>
                             </label>
                             <!-- HP, Lenovo, ASUS tương tự -->
                         </div>
